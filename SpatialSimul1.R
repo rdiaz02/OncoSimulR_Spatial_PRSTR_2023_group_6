@@ -90,7 +90,7 @@ if (num_grid == 1){
   dim2 <-c(0,0) ## el primer grid está en la posición 0,0 
 }
 
-for loop # para cada deme habría que aplicar la función migración con los parámetros
+#for loop # para cada deme habría que aplicar la función migración con los parámetros
           # que decidamos.
           # Dos tipos de cada migracion (alejada y adyacente). Para adyacente la probabilidad
           # más alta que para migración alejada.
@@ -102,3 +102,126 @@ for loop # para cada deme habría que aplicar la función migración con los par
 num_grid ##redefinir después de cada fase interdeme (la migración puede crear nuevos
          ##demes (grids) o eliminar otros que estaban antes)
 
+
+
+
+
+#### FASE INTERDEME.
+
+## Definimos genotipos: 
+fe <- allFitnessEffects(
+  data.frame(parent = c("Root", "Root", "i"),
+             child = c("u" , "i" , "v"),
+             s = c(0.1 , -0.05 , 0.25),
+             sh = -1,
+             typeDep = "MN"),
+  epistasis = c("u:i" = -1,"u:v" = -1))
+
+evalAllGenotypes (fe , order = FALSE, addwt = TRUE)
+
+## Creamos primero un deme:
+osi <- oncoSimulIndiv(fe,
+                      model = "McFL",
+                      onlyCancer = FALSE,
+                      finalTime = 500,
+                      mu = 1e-4,
+                      initSize = 1000,
+                      keepPhylog = FALSE,
+                      seed = NULL,
+                      errorHitMaxTries = FALSE,
+                      errorHitWallTime = FALSE)
+## Añadimos atributo coordenadas a la clase oncoSimul y lo podemos transformar
+## en una nueva clase que se llame 'SpatialOncosimul'.
+
+osi$coord <- as.integer(c(0,0)) # Las coordenadas son numeros enteros (importante
+# comparar coordenadas con identical y obtener TRUE cuando los objetos son iguales)
+
+# SpatialOncosimul <- osi
+# class(SpatialOncosimul) <- 'SpatialOncosimul'
+# class(SpatialOncosimul)
+# str(SpatialOncosimul)
+
+
+
+##FUNCIÓN PARA LA MIGRACIÓN DE CÉLULAS DESDE UN DEME/GRID A REGIONES ADYACENTES
+## O ALEJADAS.
+SimulMigration<- function(grid, migrationProb = 0.5, 
+                          largeDistMigrationProb = 1e-6, 
+                          maxMigrationPercentage = 0.2){
+    finalpopcomp <- data.frame(Genotype = grid$GenotypesLabels, 
+                               N = grid$pops.by.time[nrow(grid$pops.by.time), -1])
+    # Create a new data.frame with the genotypes and population number of mutant
+    # cells in the grid.
+    finalpopcomp_mut <- finalpopcomp[which(finalpopcomp$Genotype != "" & 
+                                             finalpopcomp$N > 0),]
+    # Modify the previous dataframe so instead of mutant population number in the
+    # grid, it contains the frequency of each mutant cell.
+    finalpopcomp_mut$N <- finalpopcom_pmut$N/sum(finalpopcom_pmut$N)
+    
+    
+    # Number and genotypes of cells that migrate to adjacent spaces (finalpop_near
+    # migration dataa.frame).
+    pop_nearmigration <- sample(seq(from = 1, to = grid$TotalPopSize * 
+                                      migrationProb * 
+                                      maxMigrationPercentage), 1)
+    finalpop_nearmigration <- as.data.frame(table(
+                                            sample(finalpopcomp_mut$Genotype, 
+                                                   pop_nearmigration, 
+                                                   replace = TRUE,
+                                                   prob = finalpopcomp_mut$N)))
+    colnames(finalpop_nearmigration) <-c("Genotype", "N")
+    
+    # Number of cells that migrate to remote spaces.
+    pop_remotemigration <- sample(seq(from = 1, to = grid$TotalPopSize * 
+                                        largeDistMigrationProb * 
+                                        maxMigrationPercentage), 1)
+    finalpop_remotemigration <- as.data.frame(table(
+                                              sample(finalpopcomp_mut$Genotype, 
+                                                     pop_remotemigration, 
+                                                     replace = TRUE,
+                                                     prob = finalpopcomp_mut$N)))
+    colnames(finalpop_remotemigration) <-c("Genotype", "N")
+    coord_nearmmigration <- grid$coord
+    coord_remotemigration <- grid$coord
+    
+    # This if statement ensures that only positive coordinates were selected for
+    # cells that migrate to adjacent spaces.
+    if (0 %in% (grid$coord)){
+      # While loop to guarantee that coordinates for migrating cells are different 
+      # from the ones of the grid they belong to.
+      while (identical(coord_nearmmigration, grid$coord)){ 
+        coord_nearmmigration <- c(sample(seq(grid$coord[1],
+                                             grid$coord[1] + 1), 1), 
+                                  sample(seq(grid$coord[2], 
+                                             grid$coord[2] + 1), 1))
+      }
+    } else {
+      while (identical(coord_nearmmigration, grid$coord)){
+        coord_nearmmigration <- c(sample(seq(grid$coord[1]-1,
+                                             grid$coord[1]+ 1), 1), 
+                                  sample(seq(grid$coord[2]-1, 
+                                             grid$coord[2]+ 1), 1))
+      }}
+    
+    # This while statement ensures that only positive coordinates were selected for
+    # cells that migrate to remote spaces.
+    while (identical(coord_remotemigration, grid$coord) ||  
+           any(coord_remotemigration < 0)){
+      coord_remotemigration <- c(sample(
+        c(grid$coord[1] - sample(seq(10, 35), 1),
+          grid$coord[1] + sample(seq(10, 35), 1)), 1), 
+        sample(
+          c(grid$coord[2] - sample(seq(10, 35), 1), 
+            grid$coord[2] + sample(seq(10, 35), 1)), 1))
+      
+    } 
+    
+    finalpop_nearmigration$coord <- list(coord_nearmmigration)
+    finalpop_remotemigration$coord <- list(coord_remotemigration)
+    total_migration <- rbind(finalpop_nearmigration, finalpop_remotemigration)
+    return (total_migration)
+}
+
+# Esta función habría que aplicarla con un mcapply para cada deme que exista en 
+# ese momento.
+SimulMigration(osi)
