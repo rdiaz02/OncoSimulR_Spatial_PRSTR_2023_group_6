@@ -222,10 +222,6 @@ SimulMigration<- function(grid, migrationProb = 0.5,
 }
 
 
-
-
-
-
 # Esta función habría que aplicarla con un mcapply para cada deme que exista en 
 # ese momento.
 SimulMigration(osi)
@@ -234,72 +230,4 @@ SimulMigration(osi)
 
 
 
-finalpopcomp_mut <- finalpopcomp[which(finalpopcomp$Genotype != "" & 
-                                         finalpopcomp$N > 0),]
-# Modify the previous dataframe so instead of mutant population number in the
-# osi, it contains the frequency of each mutant cell.
-finalpopcomp_mut$N <- finalpopcom_pmut$N/sum(finalpopcom_pmut$N)
 
-
-# Number and genotypes of cells that migrate to adjacent spaces (finalpop_near
-# migration dataa.frame).
-pop_nearmigration <- sample(seq(from = 1, to = osi$TotalPopSize * 
-                                  migrationProb * 
-                                  maxMigrationPercentage), 1)
-finalpop_nearmigration <- as.data.frame(table(
-  sample(finalpopcomp_mut$Genotype, 
-         pop_nearmigration, 
-         replace = TRUE,
-         prob = finalpopcomp_mut$N)))
-colnames(finalpop_nearmigration) <-c("Genotype", "N")
-
-# Number of cells that migrate to remote spaces.
-pop_remotemigration <- sample(seq(from = 1, to = osi$TotalPopSize * 
-                                    largeDistMigrationProb * 
-                                    maxMigrationPercentage), 1)
-finalpop_remotemigration <- as.data.frame(table(
-  sample(finalpopcomp_mut$Genotype, 
-         pop_remotemigration, 
-         replace = TRUE,
-         prob = finalpopcomp_mut$N)))
-colnames(finalpop_remotemigration) <-c("Genotype", "N")
-coord_nearmmigration <- osi$coord
-coord_remotemigration <- osi$coord
-
-# This if statement ensures that only positive coordinates were selected for
-# cells that migrate to adjacent spaces.
-if (0 %in% (osi$coord)){
-  # While loop to guarantee that coordinates for migrating cells are different 
-  # from the ones of the osi they belong to.
-  while (identical(coord_nearmmigration, osi$coord)){ 
-    coord_nearmmigration <- c(sample(seq(osi$coord[1],
-                                         osi$coord[1] + 1), 1), 
-                              sample(seq(osi$coord[2], 
-                                         osi$coord[2] + 1), 1))
-  }
-} else {
-  while (identical(coord_nearmmigration, osi$coord)){
-    coord_nearmmigration <- c(sample(seq(osi$coord[1]-1,
-                                         osi$coord[1]+ 1), 1), 
-                              sample(seq(osi$coord[2]-1, 
-                                         osi$coord[2]+ 1), 1))
-  }}
-
-# This while statement ensures that only positive coordinates were selected for
-# cells that migrate to remote spaces.
-while (identical(coord_remotemigration, osi$coord) ||  
-       any(coord_remotemigration < 0)){
-  coord_remotemigration <- c(sample(
-    c(osi$coord[1] - sample(seq(10, 35), 1),
-      osi$coord[1] + sample(seq(10, 35), 1)), 1), 
-    sample(
-      c(osi$coord[2] - sample(seq(10, 35), 1), 
-        grid$coord[2] + sample(seq(10, 35), 1)), 1))
-  
-} 
-
-finalpop_nearmigration$Coordinates <- list(coord_nearmmigration)
-finalpop_remotemigration$Coordinates <- list(coord_remotemigration)
-total_migration <- rbind(finalpop_nearmigration, finalpop_remotemigration)
-return (total_migration)
-}
