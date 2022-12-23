@@ -26,8 +26,9 @@ osi
 
 grid1 <- data.frame(Genotype = osi$GenotypesLabels, 
                     N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
-                    Coordinates = rep(0, length(osi$GenotypesLabels)))
-grid1$Coordinates <- rep(list(as.integer(c(0,0))), length(osi$GenotypesLabels))
+                    Coordinate_x = rep(0, length(osi$GenotypesLabels)),
+                    Coordinate_y = rep(0, length(osi$GenotypesLabels)))
+
 
 
 
@@ -38,9 +39,8 @@ oncoSimulIndiv_grid <- function(grid, iter,...){
     grid1 <- oncoSimulIndiv(...)
     init_grid <- data.frame(Genotype = grid1$GenotypesLabels, 
                        N = init_grid$pops.by.time[nrow(grid1$pops.by.time), -1],
-                       Coordinates = rep(0, length(grid1$GenotypesLabels)))
-    init_grid$Coordinates <- rep(list(as.integer(c(0,0))), 
-                            length(init_grid$GenotypesLabels))
+                       Coordinate_x = rep(0, length(grid1$GenotypesLabels)),
+                       Coordinate_y = rep(0, length(grid1$GenotypesLabels)))
     class(init_grid) <- 'SpatialOncosimul'
   } else{
     Ngenotypes <- grid$N
@@ -50,7 +50,8 @@ oncoSimulIndiv_grid <- function(grid, iter,...){
     
     next_grid <- data.frame(Genotype = next_grid$GenotypesLabels, 
                        N = next_grid$pops.by.time[nrow(next_grid$pops.by.time), -1],
-                       Coordinates = grid$Coordinates)
+                       Coordinate_x = grid$Coordinate_x,
+                       Coordinate_y = grid$Coordinate_y)
     class(next_grid) <- 'SpatialOncosimul'
   }}
 
@@ -99,44 +100,47 @@ SimulMigration <- function(grid, migrationProb = 0.5,
                                                          replace = TRUE,
                                                          prob = finalpopcomp_mut$N)))
   colnames(finalpop_remotemigration) <-c("Genotype", "N")
-  coord_nearmmigration <- grid$Coordinates[[1]]
-  coord_remotemigration <- grid$Coordinates[[1]]
+  init_coordinates <- c(grid$Coordinate_x[1], grid$Coordinate_y[1])
+  coord_nearmmigration <- init_coordinates
+  coord_remotemigration <- init_coordinates
   
   # This if statement ensures that only positive coordinates were selected for
   # cells that migrate to adjacent spaces.
-  if (0 %in% (grid1$Coordinates[[1]])){
+  if (0 %in% (init_coordinates)){
     # While loop to guarantee that coordinates for migrating cells are different 
     # from the ones of the grid they belong to.
-    while (identical(coord_nearmmigration, grid1$Coordinates[[1]])){ 
-      coord_nearmmigration <- c(sample(seq(grid$Coordinates[[1]][1],
-                                           grid$Coordinates[[1]][1] + 1), 1), 
-                                sample(seq(grid$Coordinates[[1]][2], 
-                                           grid$Coordinates[[1]][2] + 1), 1))
+    while (identical(coord_nearmmigration, init_coordinates)){ 
+      coord_nearmmigration <- c(sample(seq(init_coordinates[1],
+                                           init_coordinates[1] + 1), 1), 
+                                sample(seq(init_coordinates[2], 
+                                           init_coordinates[2] + 1), 1))
     }
   } else {
-    while (identical(coord_nearmmigration, grid1$Coordinates[[1]])){
-      coord_nearmmigration <- c(sample(seq(grid$Coordinates[[1]][1] - 1,
-                                           grid$Coordinates[[1]][1] + 1), 1), 
-                                sample(seq(grid$Coordinates[[1]][2] - 1, 
-                                           grid$Coordinates[[1]][2] + 1), 1))
+    while (identical(coord_nearmmigration, init_coordinates)){
+      coord_nearmmigration <- c(sample(seq(init_coordinates[1] - 1,
+                                           init_coordinates[1] + 1), 1), 
+                                sample(seq(init_coordinates[2] - 1, 
+                                           init_coordinates[2] + 1), 1))
     }}
   
   # This while statement ensures that only positive coordinates were selected for
   # cells that migrate to remote spaces.
-  while (identical(coord_remotemigration, grid1$Coordinates[[1]]) ||  
+  while (identical(coord_remotemigration, init_coordinates) ||  
          any(coord_remotemigration < 0)){
-    coord_remotemigration <- c(sample(c(grid$Coordinates[[1]][1] - 
+    coord_remotemigration <- c(sample(c(init_coordinates[1] - 
                                           sample(seq(10, 35), 1),
-                                        grid$Coordinates[[1]][1] + 
+                                        init_coordinates[1] + 
                                           sample(seq(10, 35), 1)), 1), 
-                               sample(c(grid$Coordinates[[1]][2] - 
+                               sample(c(init_coordinates[2] - 
                                           sample(seq(10, 35), 1), 
-                                        grid$Coordinates[[1]][2] + 
+                                        init_coordinates[2] + 
                                           sample(seq(10, 35), 1)), 1))
     
   } 
-  finalpop_nearmigration$Coordinates <- list(coord_nearmmigration)
-  finalpop_remotemigration$Coordinates <- list(coord_remotemigration)
+  finalpop_nearmigration$Coordinate_x <- coord_nearmmigration[1]
+  finalpop_nearmigration$Coordinate_y <- coord_nearmmigration[2]
+  finalpop_remotemigration$Coordinate_x <- coord_remotemigration[1]
+  finalpop_remotemigration$Coordinate_y <- coord_remotemigration[2]
   total_migration <- rbind(finalpop_nearmigration, finalpop_remotemigration)
   for (gen in unique(total_migration$Genotype)) {
     Nmigration_per_genotype <- sum(total_migration$N[which(
@@ -147,7 +151,11 @@ SimulMigration <- function(grid, migrationProb = 0.5,
   return (list(grid, total_migration))
 }
 
-SimulMigration(grid1)
+x <- SimulMigration(grid1)
+
+
+plot(x[[2]]$Coordinate_x, x[[2]]$Coordinate_y)
+
 
 
 ##1. De la lista que devuelva el mcapply (donde cada elemento es un dataframe 
