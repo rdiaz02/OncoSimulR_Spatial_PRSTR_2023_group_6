@@ -1,4 +1,5 @@
 library(OncoSimulR)
+library(parallel)
 
 ## Definimos genotipos: 
 fe <- allFitnessEffects(
@@ -26,11 +27,13 @@ osi
 
 grid1 <- data.frame(Genotype = osi$GenotypesLabels, 
                     N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
-                    Coordinate_x = rep(0, length(osi$GenotypesLabels)),
-                    Coordinate_y = rep(0, length(osi$GenotypesLabels)))
+                    Coordinate_x = as.integer(rep(0, length(osi$GenotypesLabels))),
+                    Coordinate_y = as.integer(rep(0, length(osi$GenotypesLabels))))
 
-
-
+grid2 <- data.frame(Genotype = osi$GenotypesLabels, 
+                    N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
+                    Coordinate_x = as.integer(rep(0, length(osi$GenotypesLabels))),
+                    Coordinate_y = as.integer(rep(0, length(osi$GenotypesLabels))))
 
 
 ## Posible función para simulación en primer deme y resto de demes.
@@ -39,8 +42,8 @@ oncoSimulIndiv_grid <- function(grid, iter,...){
     grid1 <- oncoSimulIndiv(...)
     init_grid <- data.frame(Genotype = grid1$GenotypesLabels, 
                        N = init_grid$pops.by.time[nrow(grid1$pops.by.time), -1],
-                       Coordinate_x = rep(0, length(grid1$GenotypesLabels)),
-                       Coordinate_y = rep(0, length(grid1$GenotypesLabels)))
+                       Coordinate_x = as.integer(rep(0, length(grid1$GenotypesLabels))),
+                       Coordinate_y = as.integer(rep(0, length(grid1$GenotypesLabels))))
     class(init_grid) <- 'SpatialOncosimul'
   } else{
     Ngenotypes <- grid$N
@@ -151,10 +154,15 @@ SimulMigration <- function(grid, migrationProb = 0.5,
   return (list(grid, total_migration))
 }
 
-x <- SimulMigration(grid1)
+SimulMigration(grid1)
+grid_list <- list(grid1, grid2) 
+y <- mclapply(grid_list, SimulMigration)
 
 
-plot(x[[2]]$Coordinate_x, x[[2]]$Coordinate_y)
+
+#z <- lapply(y, function (x) x[[1]])
+#m <- lapply(y, function (x) x[[2]])
+#c(z, m)
 
 
 
