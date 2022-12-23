@@ -26,8 +26,7 @@ osi
 
 grid1 <- data.frame(Genotype = osi$GenotypesLabels, 
                     N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
-                    Coordinates = rep(0, length(osi$GenotypesLabels)),
-                    TotalPopSize = osi$TotalPopSize)
+                    Coordinates = rep(0, length(osi$GenotypesLabels)))
 grid1$Coordinates <- rep(list(as.integer(c(0,0))), length(osi$GenotypesLabels))
 
 
@@ -39,8 +38,7 @@ oncoSimulIndiv_grid <- function(grid, iter,...){
     grid1 <- oncoSimulIndiv(...)
     init_grid <- data.frame(Genotype = grid1$GenotypesLabels, 
                        N = init_grid$pops.by.time[nrow(grid1$pops.by.time), -1],
-                       Coordinates = rep(0, length(grid1$GenotypesLabels)),
-                       TotalPopSize = grid1$TotalPopSize)
+                       Coordinates = rep(0, length(grid1$GenotypesLabels)))
     init_grid$Coordinates <- rep(list(as.integer(c(0,0))), 
                             length(init_grid$GenotypesLabels))
     class(init_grid) <- 'SpatialOncosimul'
@@ -52,8 +50,7 @@ oncoSimulIndiv_grid <- function(grid, iter,...){
     
     next_grid <- data.frame(Genotype = next_grid$GenotypesLabels, 
                        N = next_grid$pops.by.time[nrow(next_grid$pops.by.time), -1],
-                       Coordinates = grid$Coordinates,
-                       TotalPopSize = next_grid$TotalPopSize)
+                       Coordinates = grid$Coordinates)
     class(next_grid) <- 'SpatialOncosimul'
   }}
 
@@ -74,6 +71,7 @@ SimulMigration <- function(grid, migrationProb = 0.5,
                            maxMigrationPercentage = 0.2){
   # Create a new data.frame with the genotypes and population number of mutant
   # cells in the grid.
+  TotalPopSize <- sum(grid$N)
   finalpopcomp_mut <- grid[which(grid$Genotype != "" & 
                                    grid$N > 0),]
   # Modify the previous dataframe so instead of mutant population number in the
@@ -83,7 +81,7 @@ SimulMigration <- function(grid, migrationProb = 0.5,
   
   # Number and genotypes of cells that migrate to adjacent spaces (finalpop_near
   # migration dataa.frame).
-  pop_nearmigration <- sample(seq(from = 1, to = grid$TotalPopSize[1] * 
+  pop_nearmigration <- sample(seq(from = 1, to = TotalPopSize * 
                                     migrationProb * 
                                     maxMigrationPercentage), 1)
   finalpop_nearmigration <- as.data.frame(table(sample(finalpopcomp_mut$Genotype, 
@@ -93,7 +91,7 @@ SimulMigration <- function(grid, migrationProb = 0.5,
   colnames(finalpop_nearmigration) <-c("Genotype", "N")
   
   # Number of cells that migrate to remote spaces.
-  pop_remotemigration <- sample(seq(from = 1, to = grid$TotalPopSize[1] * 
+  pop_remotemigration <- sample(seq(from = 1, to = TotalPopSize * 
                                       largeDistMigrationProb * 
                                       maxMigrationPercentage), 1)
   finalpop_remotemigration <- as.data.frame(table(sample(finalpopcomp_mut$Genotype, 
@@ -146,7 +144,6 @@ SimulMigration <- function(grid, migrationProb = 0.5,
     grid$N[which(grid$Genotype == gen)] <- (grid$N[which(grid$Genotype == gen)] 
                                             - Nmigration_per_genotype)
   }
-  grid$TotalPopSize <- sum(grid$N)
   return (list(grid, total_migration))
 }
 
