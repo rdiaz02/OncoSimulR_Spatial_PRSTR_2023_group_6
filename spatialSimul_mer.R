@@ -172,7 +172,30 @@ SimulMigration <- function(grid, migrationProb = 0.5,
     grid$N[which(grid$Genotype == gen)] <- (grid$N[which(grid$Genotype == gen)] 
                                             - Nmigration_per_genotype)
   }
-  return (list(grid, total_migration))
+  
+  SimulMigration_output <- list(grid, total_migration)
+  grid <- bind_rows(SimulMigration_output) #unimos todos los dataframes con la función bind_rows del paquete dplyr
+  grid_combined <- as.data.table(grid)[, lapply(.SD, sum), by = .(Genotype, Coordinate_x, Coordinate_y)]
+  # combinamos los que tengan mismo genotipo y coordenadas
+  grid_combined <- grid_combined[, c(1,4,2,3)]
+  # reordenamos las columnas para que quede en el mismo formato de antes
+  demes <- split(grid_combined, with(grid_combined, interaction(Coordinate_x, Coordinate_y)), drop = TRUE)
+  # separamos en función de las coordenadas para crear demes
+  
+  # para añadir a los nuevos demes la población WT:
+  deme_with_WT <- list()
+  for (deme in `demes`) {
+    if (!("" %in% (deme$Genotype))){
+      wt <- data.frame(Genotype = "", N = 1000, 
+                       Coordinate_x = deme$Coordinate_x[1],
+                       Coordinate_y = deme$Coordinate_y[1])
+      deme <- rbind(deme, wt)
+      deme_with_WT[[length(deme_with_WT) + 1]] <- deme
+    } else {
+      deme_with_WT[[length(deme_with_WT) + 1]] <- deme
+    }
+  }
+  return (deme_with_WT)
 }
 ### grid es un df con las celulas que quedan en el deme input despues de la simulación
 ### total migration son las migraciones a demes nuevos
@@ -183,6 +206,7 @@ y <- mclapply(grid_list, SimulMigration)
 
 
 
+### La función la he metido dentro de SimulMigration
 Demes <- function(SimulMigration_output){
   grid <- bind_rows(SimulMigration_output) #unimos todos los dataframes con la función bind_rows del paquete dplyr
   grid_combined <- as.data.table(grid)[, lapply(.SD, sum), by = .(Genotype, Coordinate_x, Coordinate_y)]
