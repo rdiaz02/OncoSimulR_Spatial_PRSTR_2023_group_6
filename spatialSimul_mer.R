@@ -6,6 +6,7 @@ library(OncoSimulR)
 library(parallel)
 library(dplyr)
 library(data.table)
+library(testthat)
 
 ?oncoSimulIndiv
 
@@ -20,74 +21,11 @@ fe <- allFitnessEffects(
 
 evalAllGenotypes (fe , order = FALSE, addwt = TRUE)
 
-# Lanzamos la simulación para el primer deme.
-osi <- oncoSimulIndiv(fe,
-                      model = "McFL",
-                      onlyCancer = FALSE,
-                      finalTime = 500,
-                      mu = 1e-4,
-                      initSize = 1000,
-                      keepPhylog = FALSE,
-                      seed = NULL,
-                      errorHitMaxTries = FALSE,
-                      errorHitWallTime = FALSE)
-osi
-
-grid1 <- data.frame(Genotype = osi$GenotypesLabels, 
-                    N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
-                    Coordinate_x = as.integer(rep(0, length(osi$GenotypesLabels))),
-                    Coordinate_y = as.integer(rep(0, length(osi$GenotypesLabels))))
-
-grid2 <- data.frame(Genotype = osi$GenotypesLabels, 
-                    N = osi$pops.by.time[nrow(osi$pops.by.time), -1],
-                    Coordinate_x = as.integer(rep(0, length(osi$GenotypesLabels))),
-                    Coordinate_y = as.integer(rep(0, length(osi$GenotypesLabels))))
-
-
-# Posible función para simulación en primer deme y resto de demes.
-oncoSimulIndiv_grid <- function(grid, iter,...){
-  ### pensar lo de grid
-  if (iter == 1){
-    grid1 <- oncoSimulIndiv(...)
-    init_grid <- data.frame(Genotype = grid1$GenotypesLabels, 
-                            N = grid1$pops.by.time[nrow(grid1$pops.by.time), -1],
-                            Coordinate_x = as.integer(rep(0, length(grid1$GenotypesLabels))),
-                            Coordinate_y = as.integer(rep(0, length(grid1$GenotypesLabels))))
-    ### extraemos los datos que nos interesan para generar un ouptut adecuado para la siguiente función
-    class(init_grid) <- 'SpatialOncosimul'
-    iter <- iter + 1
-    ### y después el output se pasa a la func interdeme
-  } else{
-    Ngenotypes <- grid$N
-    Genotypes <- grid$Genotypes
-    next_grid <- oncoSimulIndiv(initSize = Ngenotypes, 
-                                initMutant = Genotypes, ...)
-    ### ejecutamos Indiv pero con los genotipos y población del grid, no los iniciales
-    
-    next_grid <- data.frame(Genotype = next_grid$GenotypesLabels, 
-                            N = next_grid$pops.by.time[nrow(next_grid$pops.by.time), -1],
-                            Coordinate_x = grid$Coordinate_x,
-                            Coordinate_y = grid$Coordinate_y)
-    ### las coordenadas se mantienen igual porque es fase intrademe, no hay movimiento
-    class(next_grid) <- 'SpatialOncosimul'
-    iter <- iter + 1
-    ### output a la func interdeme
-  }}
-
-# La función OncoSimulIndiv_grid habría que pasarla con mclapply a una lista que 
-# contenga los demes creados hasta el momento, para que la aplique sobre cada deme. 
-# Y nos devolvería una nueva lista con los nuevos demes (cada uno 1 dataframe)
-# tras la simulación. Los argumentos de la función OncoSimulIndiv_grid son los
-# mismos que para la función OncoSimulIndiv, añadiendo el grid y la iteración en 
-# la que nos encontramos dentro de la simulación espacial (podemos sumar 1 a iter
-# cada vez que terminamos una fase interdeme).
-
-### si el grid se genera en la primera fase intrademe (dentro de la función 
-### OncosimulIndiv_grid), ¿cómo es posible pasarlo como argumento?
-
 
 # FUNCIÓN FASE INTERDEME (PARA 2D).
 ###grid <-grid1 #para las pruebas
+
+
 SimulMigration <- function(grid, migrationProb = 0.5, 
                            largeDistMigrationProb = 1e-6, 
                            maxMigrationPercentage = 0.2){
@@ -174,39 +112,9 @@ SimulMigration <- function(grid, migrationProb = 0.5,
   }
   
   SimulMigration_output <- list(grid, total_migration)
-  grid <- bind_rows(SimulMigration_output) #unimos todos los dataframes con la función bind_rows del paquete dplyr
-  grid_combined <- as.data.table(grid)[, lapply(.SD, sum), by = .(Genotype, Coordinate_x, Coordinate_y)]
-  # combinamos los que tengan mismo genotipo y coordenadas
-  grid_combined <- grid_combined[, c(1,4,2,3)]
-  # reordenamos las columnas para que quede en el mismo formato de antes
-  demes <- split(grid_combined, with(grid_combined, interaction(Coordinate_x, Coordinate_y)), drop = TRUE)
-  # separamos en función de las coordenadas para crear demes
-  
-  # para añadir a los nuevos demes la población WT:
-  deme_with_WT <- list()
-  for (deme in `demes`) {
-    if (!("" %in% (deme$Genotype))){
-      wt <- data.frame(Genotype = "", N = 1000, 
-                       Coordinate_x = deme$Coordinate_x[1],
-                       Coordinate_y = deme$Coordinate_y[1])
-      deme <- rbind(deme, wt)
-      deme_with_WT[[length(deme_with_WT) + 1]] <- deme
-    } else {
-      deme_with_WT[[length(deme_with_WT) + 1]] <- deme
-    }
-  }
-  return (deme_with_WT)
+  return (SimulMigration_output)
 }
-### grid es un df con las celulas que quedan en el deme input despues de la simulación
-### total migration son las migraciones a demes nuevos
 
-SimulMigration(grid1)
-grid_list <- list(grid1, grid2) 
-y <- mclapply(grid_list, SimulMigration)
-
-
-
-### La función la he metido dentro de SimulMigration
 Demes <- function(SimulMigration_output){
   grid <- bind_rows(SimulMigration_output) #unimos todos los dataframes con la función bind_rows del paquete dplyr
   grid_combined <- as.data.table(grid)[, lapply(.SD, sum), by = .(Genotype, Coordinate_x, Coordinate_y)]
@@ -235,7 +143,95 @@ Demes <- function(SimulMigration_output){
 ### una lista de df, cada uno es un deme, con el formato de siempre, de modo que
 ### se puede pasar a oncoSimulIndiv con mclapply
 
-Demes(y)
+
+#-------------------------------------------------------------------------------#
+oncoSimulIndiv_grid <- function(num_iter, migrationProb, 
+                                largeDistMigrationProb, 
+                                maxMigrationPercentage, fp,
+                                model, onlyCancer,
+                                finalTime, mu,
+                                initSize, keepPhylog,
+                                seed, errorHitMaxTries,
+                                errorHitWallTime, ...) {
+  iteration <- 1
+  while( iteration <= num_iter ) {
+    cat('Iteration: ', iteration)
+    if (iteration == 1){
+      grid <- oncoSimulIndiv(fp,
+                             model, onlyCancer,
+                             finalTime, mu,
+                             initSize, keepPhylog,
+                             seed, errorHitMaxTries,
+                             errorHitWallTime)
+      grid <- data.frame(Genotype = grid$GenotypesLabels, 
+                         N = grid$pops.by.time[nrow(grid$pops.by.time), -1],
+                         Coordinate_x = as.integer(rep(0, length(grid$GenotypesLabels))),
+                         Coordinate_y = as.integer(rep(0, length(grid$GenotypesLabels))))
+      ### extraemos los datos que nos interesan para generar un ouptut adecuado para la siguiente función
+      #class(grid) <- 'SpatialOncosimul'
+      ### y después el output se pasa a la func interdeme:
+      grid <- SimulMigration (grid, migrationProb, 
+                              largeDistMigrationProb, 
+                              maxMigrationPercentage)
+      iteration <- iteration + 1
+      
+    } else {
+      Ngenotypes <- grid$N
+      Genotypes <- grid$Genotypes
+      #esto ponerlo con mclapply
+      grid <- oncoSimulIndiv(initSize = Ngenotypes, 
+                             initMutant = Genotypes, fp,
+                             model, onlyCancer,
+                             finalTime, mu,
+                             keepPhylog,
+                             seed, errorHitMaxTries,
+                             errorHitWallTime)
+      ### ejecutamos Indiv pero con los genotipos y población del grid, no los iniciales
+      
+      grid <- data.frame(Genotype = next_grid$GenotypesLabels, 
+                         N = next_grid$pops.by.time[nrow(next_grid$pops.by.time), -1],
+                         Coordinate_x = grid$Coordinate_x,
+                         Coordinate_y = grid$Coordinate_y)
+      ### las coordenadas se mantienen igual porque es fase intrademe, no hay movimiento
+      #class(grid) <- 'SpatialOncosimul'
+      ### output a la func interdeme
+      grid <- mclapply(grid, SimulMigration)
+      grid <- Demes(SimulMigration_output)
+      iteration <- iteration + 1
+      
+    }}
+  
+  return(grid)
+}
+
+prueba <- oncoSimulIndiv_grid(num_iter = 1,  
+                              fp = fe,
+                              model = "McFL",
+                              onlyCancer = FALSE,
+                              finalTime = 500,
+                              mu = 1e-4,
+                              initSize = 1000,
+                              keepPhylog = FALSE,
+                              seed = NULL,
+                              errorHitMaxTries = FALSE,
+                              errorHitWallTime = FALSE,
+                              migrationProb = 0.5, 
+                              largeDistMigrationProb = 1e-6, 
+                              maxMigrationPercentage = 0.2)
+
+
+
+
+
+lista <- SimulMigration(grid1)
+grid_list <- list(grid1, grid2) 
+y <- mclapply(grid_list, SimulMigration)
+y <- mclapply(lista, SimulMigration)
+y <- mclapply(grid1, SimulMigration)
+
+
+
+
 
   
 
@@ -260,9 +256,17 @@ class(combinado)
 
 ## Buscar las coordenadas que no tengan genotipo WT o "".
 
+#------------------------------------------------------------------------------#
+## tests
 
-
-
+test_that("number of grids = number of demes", {
+  ntests <- 100
+  for(i in 1:ntests) {
+    #num_grids <- rnorm(10)
+    #num_demes <- rnorm(10)
+    #expect_identical(oncoSimulIndiv_grid(... , ...)$pv, 1)
+  }
+})
 
 
 
