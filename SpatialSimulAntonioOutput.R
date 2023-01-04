@@ -3,10 +3,13 @@
 # 
 # BiocManager::install("OncoSimulR")
 
+# install.packages("scatterplot3d")
+# install.packages("viridis")
+library(viridis)
 library(OncoSimulR)
 library(parallel)
 library(dplyr)
-
+library(scatterplot3d)
 
 ## Definimos genotipos: 
 fe <- allFitnessEffects(
@@ -155,7 +158,7 @@ to_SpatialOncoSimul.list <- function (finalgrid_list, spatialIterMax, ...){
   JoinGrids <- bind_rows(finalgrid_list)
   TotalPop <- sum(JoinGrids$N)
   TotalDems <- length(finalgrid_list)
-  TotalIte <- spatialIterMax
+  TotalIte <- spatialIterMax - 1
   PopGenotypes <- aggregate(N ~ Genotype, data = JoinGrids, sum)
   ListGenotypes <- PopGenotypes$Genotype
   PopPerGenotypes <- PopGenotypes$N
@@ -179,6 +182,51 @@ to_SpatialOncoSimul.list <- function (finalgrid_list, spatialIterMax, ...){
                            Grids = finalgrid_list)
   finalgrid_spatial <- structure(finalgridspatial, class = "SpatialOncoSimul")
   return(finalgrid_spatial)
+}
+
+# Function for generating plots from the simulations
+
+Simulationplot <- function(SpatialOncoSimGrid, dim){
+  grid <- SpatialOncoSimGrid$Grids
+  maxgen <- lapply(grid, function(x) x[x$N == max(x$N), ])
+  joinmaxgen <- bind_rows(maxgen)
+  joinmaxgen <- joinmaxgen[joinmaxgen$Genotype != "", ]
+  maxgencoor <- select(joinmaxgen, c("Genotype", "Coordinates"))
+  
+  if (dim == "3D"){
+    coordX <- sapply(maxgencoor$Coordinates, function(x) x[1])
+    coordY <- sapply(maxgencoor$Coordinates, function(x) x[2])
+    coordZ <- sapply(maxgencoor$Coordinates, function(x) x[3])
+    
+    Edgencoord <- data.frame(Genotype = maxgencoor$Genotype, 
+                             X = coordX, Y = coordY, Z = coordZ)
+    scattercolors <- plasma(length(unique(Edgencoord$Genotype)))
+    scattercolors <- scattercolors[as.numeric(as.factor(Edgencoord$Genotype))]
+    scatterplot3d(Edgencoord[,2:4], pch = 16, color = scattercolors)
+  }
+  
+  if (dim == "2D"){
+    coordX <- sapply(maxgencoor$Coordinates, function(x) x[1])
+    coordY <- sapply(maxgencoor$Coordinates, function(x) x[2])
+    
+    Zdgencoord <- data.frame(Genotype = maxgencoor$Genotype, 
+                             X = coordX, Y = coordY)
+    scattercolors <- plasma(length(unique(Zdgencoord$Genotype)))
+    scattercolors <- scattercolors[as.factor(Zdgencoord$Genotype)]
+    plot(Zdgencoord$X, Zdgencoord$Y, pch = 16, col = scattercolors, 
+         xlab = "X", ylab = "Y")
+  }
+  
+  if (dim == "1D"){
+    coordX <- sapply(maxgencoor$Coordinates, function(x) x[1])
+    Idgencoord <- data.frame(Genotype = maxgencoor$Genotype, 
+                             X = coordX)
+    scattercolors <- plasma(length(unique(Idgencoord$Genotype)))
+    scattercolors <- scattercolors[as.factor(Idgencoord$Genotype)]
+    plot(Idgencoord$X, rep(0, length(Idgencoord$X)), 
+         xlab = "", ylab = "", 
+         pch = 16, col = scattercolors)
+  }
 }
 
 ## Final function for Spatial Simulation (new arguments have been included
@@ -346,7 +394,7 @@ SpatialOncoSimul <- function(fp, model = "Exp",
                                              largeDistMigrationProb = largeDistMigrationProb, 
                                              maxMigrationPercentage = maxMigrationPercentage),
                                          mc.cores = mc.cores)
-          migration_out_df <- bind_rows(migration_out_list)
+          migration_out_df <- suppressWarnings(bind_rows(migration_out_list)) 
           
           if (SpatialModel == "1D"){
               migration_out_df$Coordinates <- unlist(migration_out_df$Coordinates)
@@ -396,6 +444,7 @@ SpatialOncoSimul <- function(fp, model = "Exp",
       iter <- iter + 1 
     }
     FinalObject <- to_SpatialOncoSimul(finalgrid_list, spatialIterMax)
+    Simulationplot(FinalObject, dim = SpatialModel)
     return (FinalObject)
 }
 
@@ -409,10 +458,9 @@ z <- SpatialOncoSimul(fp = fe,
                       seed = NULL,
                       errorHitMaxTries = FALSE,
                       errorHitWallTime = FALSE, initMutant = c("i"), 
-                      spatialIterMax = 10, SpatialModel = "3D")
+                      spatialIterMax = 20, SpatialModel = "3D")
 
-Simulationplot(SpatialOncoSimul, manual = TRUE) {
-  
+
 
 ## Solo puede haber un valor de initSize.  Es decir, el primer grid puede crearse
 # a partir de un solo genotipo distinto del WT, pero no a partir de varios genotipos
