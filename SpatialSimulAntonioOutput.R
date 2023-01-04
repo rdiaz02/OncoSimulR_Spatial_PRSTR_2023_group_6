@@ -173,7 +173,11 @@ to_SpatialOncoSimul.list <- function (finalgrid_list, spatialIterMax, ...){
                    PopPerGenotypes[g], " --- Demes: ", DemsGenotype[g]))
     }
   }
-  finalgrid_spatial <- structure(finalgrid_list, class = "SpatialOncoSimul")
+  finalgridspatial <- list(Final_Population = TotalPop, Total_Demes = TotalDems,
+                           Total_Iterations = TotalIte, 
+                           List_of_Genotypes = PopGenotypes,
+                           Grids = finalgrid_list)
+  finalgrid_spatial <- structure(finalgridspatial, class = "SpatialOncoSimul")
   return(finalgrid_spatial)
 }
 
