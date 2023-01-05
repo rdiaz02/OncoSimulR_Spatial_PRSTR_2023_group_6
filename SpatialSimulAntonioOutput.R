@@ -438,7 +438,7 @@ SpatialOncoSimul <- function(fp, model = "Exp",
           finalgrid_list <- mclapply(grid_list, function(x) AddWT_newgrid(x, initSize = initSize), 
                                      mc.cores = mc.cores)
       } else {
-          finalgrid_list <- intragrid_list
+          finalgrid_list <<- intragrid_list
       }
       names(finalgrid_list) <- paste0("Grid", seq(1, length(finalgrid_list)))
       iter <- iter + 1 
