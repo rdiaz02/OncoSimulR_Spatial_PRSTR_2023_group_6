@@ -65,7 +65,7 @@ to_SpatialOncoSimul.list <- function (finalgrid_list, spatialIterMax, ...){
 ## Final function for Spatial Simulation (new arguments have been included
 ## with respect to OncoSimulIndiv).
 
-SpatialOncoSimul <- function(fp, model = "Exp", 
+SpatialOncoSimul <- function(fp, model = "McFL", 
                              numPassengers = 0, mu = 1e-6, muEF = NULL,
                              detectionSize = 1e8, detectionDrivers = 4,
                              detectionProb = NA,
@@ -497,7 +497,6 @@ SpatialOncoSimul <- function(fp, model = "Exp",
 }
 
 z <- SpatialOncoSimul(fp = fe,
-                      model = "McFL",
                       onlyCancer = FALSE,
                       finalTime = 500,
                       mu = 1e-4,
