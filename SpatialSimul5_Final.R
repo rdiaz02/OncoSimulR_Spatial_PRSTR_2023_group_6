@@ -305,7 +305,6 @@ SpatialOncoSimul <- function(fp, model = "Exp",
     }
     
     ## Function for generating the plots corresponding to the spatial simulation.
-    
     Simulationplot <- function(SpatialOncoSimGrid, dim){
       grid <- SpatialOncoSimGrid$Grids
       maxgen <- lapply(grid, function(x) x[x$N == max(x$N), ])
@@ -367,7 +366,7 @@ SpatialOncoSimul <- function(fp, model = "Exp",
     spatialIterMax <- spatialIterMax + 1  
     while (iter <= spatialIterMax) {
       # 1. Simulation inside each grid. The simulation for each grid is done 
-      # during specific time units.
+      # during specific time units (finalTime)
         if (length(finalgrid_list) == 0) {
             simul_grid <- oncoSimulIndiv(fp = fp, model = model, 
                                          numPassengers = numPassengers, 
@@ -419,8 +418,8 @@ SpatialOncoSimul <- function(fp, model = "Exp",
                                      oncoSimulIndiv_grid(grid = x), 
                                      mc.cores = mc.cores)
         }
-      # After the individual simulation for each grid is completed, the migration 
-      # operations will be performed.
+      # 2. After the individual simulation for each grid is completed, the 
+      # migration operations will be performed.
       intragrid_list <- Filter(Negate(is.null), intragrid_list) 
       if (iter < spatialIterMax & length(intragrid_list) > 0){
           migration_out_list <- mclapply(
@@ -481,12 +480,14 @@ SpatialOncoSimul <- function(fp, model = "Exp",
                                     mc.cores = mc.cores)
           }
           finalgrid_list <- mclapply(grid_list, function(x) AddWT_newgrid(
-            x, initSize = initSize), 
-                                     mc.cores = mc.cores)
+                                      x, initSize = initSize),mc.cores = mc.cores)
       } else if (length(intragrid_list) > 0) {
           finalgrid_list <<- intragrid_list
       }
       names(finalgrid_list) <- paste0("Grid", seq(1, length(finalgrid_list)))
+      if (iter <= spatialIterMax - 1){
+          cat("Iteration", iter, "(", length(finalgrid_list), "demes)\n")
+      }
       iter <- iter + 1 
     }
     FinalObject <- to_SpatialOncoSimul(finalgrid_list, spatialIterMax)
@@ -505,4 +506,4 @@ z <- SpatialOncoSimul(fp = fe,
                       seed = NULL,
                       errorHitMaxTries = FALSE,
                       errorHitWallTime = FALSE, initMutant = c("i"), 
-                      spatialIterMax = 10, SpatialModel = "1D")
+                      spatialIterMax = 20, SpatialModel = "3D")
