@@ -49,8 +49,8 @@ whether the effects of mutations operate on the death rate (“Bozic”) or the 
 rate (“Exp”). It is recommended to use the model with carrying capacity ("McFL") 
 as the population in this model is kept more constant during the simulation, which 
 biologically is more meaningful as the cell growth inside the grid is limited by 
-space. Whereas in the "Exp" o "Bozic" cell population can growth disproportionaly 
-or tend to 0. 
+space. Whereas in the "Exp" o "Bozic" cell population can grow indefinitely or 
+decrease until extinct.
 
 3. You must also specify the number of iterations for running the simulation and 
 the spatial model for representing cell migration. The percentage of migrating cells,
