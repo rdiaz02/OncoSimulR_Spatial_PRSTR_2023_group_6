@@ -324,8 +324,9 @@ SpatialOncoSimul <- function(fp, model = "Exp",
         scattercolors <- scattercolorsu[as.numeric(as.factor(Edgencoord$Genotype))]
         s3d <- scatterplot3d(Edgencoord[,2:4], pch = 16, color = scattercolors)
         s3d
-        legend(s3d$xyz.convert(7.5, 3, 4.5), 
-               legend = unique(Edgencoord$Genotype),
+        legend(s3d$xyz.convert((max(coordX)*1.2), (max(coordY)/2), 
+                               (max(coordZ)/2)), 
+               legend = levels(as.factor(Edgencoord$Genotype)),
                col =  scattercolorsu, 
                pch = 16)
       }
@@ -336,20 +337,28 @@ SpatialOncoSimul <- function(fp, model = "Exp",
         
         Zdgencoord <- data.frame(Genotype = maxgencoor$Genotype, 
                                  X = coordX, Y = coordY)
-        scattercolors <- plasma(length(unique(Zdgencoord$Genotype)))
-        scattercolors <- scattercolors[as.factor(Zdgencoord$Genotype)]
+        scattercolorsu <- plasma(length(unique(Zdgencoord$Genotype)))
+        scattercolors <- scattercolorsu[as.factor(Zdgencoord$Genotype)]
         plot(Zdgencoord$X, Zdgencoord$Y, pch = 16, col = scattercolors, 
              xlab = "X", ylab = "Y")
+        legend((max(coordX))*0.9, (max(coordY)),
+               legend = levels(as.factor(Zdgencoord$Genotype)),
+               col =  scattercolorsu, 
+               pch = 16)
       }
       if (dim == "1D"){
         coordX <- sapply(maxgencoor$Coordinates, function(x) x[1])
         Idgencoord <- data.frame(Genotype = maxgencoor$Genotype, 
                                  X = coordX)
-        scattercolors <- plasma(length(unique(Idgencoord$Genotype)))
-        scattercolors <- scattercolors[as.factor(Idgencoord$Genotype)]
+        scattercolorsu <- plasma(length(unique(Idgencoord$Genotype)))
+        scattercolors <- scattercolorsu[as.factor(Idgencoord$Genotype)]
         plot(Idgencoord$X, rep(0, length(Idgencoord$X)), 
              xlab = "", ylab = "", 
              pch = 16, col = scattercolors)
+        legend((max(coordX))*0.9, 1,
+               legend = levels(as.factor(Idgencoord$Genotype)),
+               col =  scattercolorsu, 
+               pch = 16)
       }
     }
   
@@ -496,4 +505,4 @@ z <- SpatialOncoSimul(fp = fe,
                       seed = NULL,
                       errorHitMaxTries = FALSE,
                       errorHitWallTime = FALSE, initMutant = c("i"), 
-                      spatialIterMax = 10, SpatialModel = "3D")
+                      spatialIterMax = 10, SpatialModel = "1D")
