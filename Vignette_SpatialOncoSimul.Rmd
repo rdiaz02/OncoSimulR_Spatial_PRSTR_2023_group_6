@@ -35,43 +35,27 @@ Master's degree final project of Alberto Parramón Castillo (2018).
 
 
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
-
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
 ## Vignette Info
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-Using this package will often involve the following steps:
+Using this function will often involve the following steps:
 
 1. Specify fitness effects.
 
-2. Simulate cancer progression in a spatial context. 
 
-3. Decide on a model. This basically amounts to choosing a model with exponential 
-growth (“Exp” or “Bozic”) or a model with carrying capacity (“McFL”). If exponential 
-growth, you can choose whether the effects of mutations operate on the death rate 
-(“Bozic”) or the birth rate (“Exp”). It is recommended to use the model with
-carrying capacity ("McFL") as the population in this model is kept more constant
-during the simulation, which biologically is more meaningful as the cell growth 
-inside the grid is limited by space. Whereas in the "Exp" o "Bozic" cell population 
-can growth disproportionally or tend to 0. 
+2. Simulate cancer progression in a spatial context.Decide on a model. 
+This basically amounts to choosing a model with exponential growth (“Exp” or “Bozic”) 
+or a model with carrying capacity (“McFL”). If exponential growth, you can choose 
+whether the effects of mutations operate on the death rate (“Bozic”) or the birth 
+rate (“Exp”). It is recommended to use the model with carrying capacity ("McFL") 
+as the population in this model is kept more constant during the simulation, which 
+biologically is more meaningful as the cell growth inside the grid is limited by 
+space. Whereas in the "Exp" o "Bozic" cell population can growth disproportionaly 
+or tend to 0. 
 
-4. You must also specify the number of iterations for running the simulation and 
-the spatial model for representing cell migration.
+3. You must also specify the number of iterations for running the simulation and 
+the spatial model for representing cell migration. The percentage of migrating cells,
+the probability of migration to near and remote spaces can also be specified by 
+the user.
 
 Of course, at least for initial playing around, you can use the defaults.
 
@@ -90,7 +74,10 @@ s1 <- allFitnessEffects(
 
 evalAllGenotypes (s1 , order = FALSE, addwt = TRUE)
 
-# Simul the spatial tumor cell growth in 3D during 20 iterations.
+# Simul the spatial tumor cell growth in 3D during 20 iterations, using default
+# migration parameters  migrationProb = 0.5, largeDistMigrationProb = 1e-6, 
+# maxMigrationPercentage = 0.2
+
 Spatial_3D <- SpatialOncoSimul(fp = s1,
                       model = "McFL",
                       onlyCancer = FALSE,
@@ -104,17 +91,11 @@ Spatial_3D <- SpatialOncoSimul(fp = s1,
                       spatialIterMax = 20, SpatialModel = "3D")
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+## As a second example, we will use a model where we specify restrictions in the 
+## order of accumulation of mutations using a DAG with the pancreatic cancer poset 
+## in Gerstung, Eriksson, et al. (2011).
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
 
 ```{r, echo=FALSE, results='asis'}
 # We define fitness effects with a new genotype composition.
@@ -144,9 +125,42 @@ Spatial_3D <- SpatialOncoSimul(fp = pancr,
                       errorHitWallTime = FALSE, 
                       spatialIterMax = 10, SpatialModel = "3D")
 ```
-## More Examples
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+## Testing the SpatialOncoSimul function using functionality of frequency-dependent 
+## fitness in OncoSimulR package. 
+
+With frequency-dependence fitness we can make fitness (actually, birth rate) depend 
+on the frequency of other genotypes. We specify how the fitness (birth rate) of 
+each genotype depends (or not) on other genotypes.
+
+
+```{r, echo=FALSE, results='asis'}
+## Define fitness of the different genotypes
+gffd <- data.frame(
+    Genotype = c("WT", "A", "B", "C", "A, B"), 
+    Fitness = c("1 + 1.5 * f_A_B",
+                "1.3 + 1.5 * f_A_B",
+                "1.4",
+                "1.1 + 0.7*((f_A + f_B) > 0.3) + f_A_B",
+                "1.2 + sqrt(f_1 + f_C + f_B) - 0.3 * (f_A_B > 0.5)"))
+
+afd <- allFitnessEffects(genotFitness = gffd, 
+                         frequencyDependentFitness = TRUE,
+                         frequencyType = "rel")
+set.seed(1) ## for reproducibility
+sfd <- SpatialOncoSimul(afd, 
+                       model = 'McFL',
+                       onlyCancer = FALSE,
+                       finalTime = 55, ## short, for speed
+                       mu = 1e-4,
+                       initSize = 1000,
+                       initMutant = c ("A"),
+                       spatialIterMax = 10, SpatialModel = "3D")
+```
+
+
+## As a fourth example, to hightly the importance of migrationProb parameter, 
+## a simulation is runned with the maximum probability of migration to near spaces.
 
 ```{r, echo=FALSE, results='asis'}
 # We define fitness effects with a new genotype composition.
@@ -154,15 +168,18 @@ s2 <- allFitnessEffects(epistasis = c ("A:-B:-C"=0.05, "-A:B:-C"=0.05 ,
                                        "-A:-B:C"=0.05 ,"A:B:-C"=0.045 , 
                                        "A:-B:C"=0.045 , "-A:B:C"=0.045 ,
                                        "A:B:C"=0.055))
-                                      
-# Simulation of spatial model.
+                                   
+# Simulation of spatial model changing the migration probability to near spaces.
 sp2 <- SpatialOncoSimul (s2, model = 'McFL',
                          onlyCancer = FALSE,
                          finalTime = 500,
                          mu = 1e-4,
                          initSize = 1000,
                          initMutant = c ("A"),
-                         spatialIterMax = 10, SpatialModel = "3D")
+                         migrationProb = 1, 
+                         largeDistMigrationProb = 1e-6, 
+                         maxMigrationPercentage = 0.2,
+                         spatialIterMax = 10, SpatialModel = "2D")
 
 
 
