@@ -486,7 +486,7 @@ SpatialOncoSimul <- function(fp, model = "McFL",
       }
       names(finalgrid_list) <- paste0("Grid", seq(1, length(finalgrid_list)))
       if (iter <= spatialIterMax - 1){
-          cat("Iteration", iter, "(", length(finalgrid_list), "demes)\n")
+          cat(paste0("Iteration ", iter, " (", length(finalgrid_list), " demes)\n"))
       }
       iter <- iter + 1 
     }
