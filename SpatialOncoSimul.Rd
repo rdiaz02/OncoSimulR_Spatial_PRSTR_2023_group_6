@@ -1,56 +1,29 @@
 \name{SpatialOncoSimul}
 \alias{SpatialOncoSimul}
-\alias{oncoSimulIndiv}
-\alias{oncoSimulPop}
 \alias{print.oncosimul}
-\alias{print.oncosimulpop}
 \alias{summary.oncosimul}
-\alias{summary.oncosimulpop}
-\alias{oncoSimulSample}
 
 
 \title{
-  Simulate tumor progression for one or more individuals, optionally
-  returning just a sample in time.
+  SpatialOncoSimul with OncoSimulR. Spatial simulation of tumoral cell growth.
 }
 
 \description{
-  Simulate tumor progression including possible restrictions in the
-  order of driver mutations. Optionally add passenger
-  mutations. When used in frequency dependent fitness situation, only fitness
-  effects are allowed. Simulation is done using the BNB algorithm of Mather et
-  al., 2012.
+  SpatialOncoSimul is a function implemented inside the package OncoSimulR for the
+  spatial simulation of tumoral cell growth. This function simulates tumor 
+  progression from one starting position in a 1D, 2D or 3D grid specified by the user. 
+  After the first population of tumoral cells is developed with OncoSimulIndiv, a 
+  small population of tumoral cells will migrate to adjacent or remote spaces based 
+  on the fitness of the tumor genotypes. The migrating cells will occupied new space 
+  coordinates and will be combined with an initial population of wild-type cells
+  present in the new location. Then, the OncoSimulIndiv function will be launched 
+  again in each space coordinate to simulate tumor progression from the new tumor 
+  composition in each position. This process is repeated the number of times specified 
+  by the user to analyse the tumor progression in a spatial context.
 }
+
 \usage{
- oncoSimulIndiv(fp, model = "Exp", 
-                numPassengers = 0, mu = 1e-6, muEF = NULL,
-                detectionSize = 1e8, detectionDrivers = 4,
-                detectionProb = NA,
-                sampleEvery = ifelse(model \%in\% c("Bozic", "Exp"), 1,
-                             0.025),
-                initSize = 500, s = 0.1, sh = -1,
-                K = sum(initSize)/(exp(1) - 1), keepEvery = sampleEvery,
-                minDetectDrvCloneSz = "auto",
-                extraTime = 0,
-                finalTime = 0.25 * 25 * 365, onlyCancer = FALSE,
-                keepPhylog = FALSE,
-                mutationPropGrowth = ifelse(model == "Bozic",
-                                                       FALSE, TRUE),
-                max.memory = 2000, max.wall.time = 200,
-                max.num.tries = 500,
-                errorHitWallTime = TRUE,
-                errorHitMaxTries = TRUE,
-                verbosity = 0,
-                initMutant = NULL,
-                AND_DrvProbExit = FALSE,
-                fixation = NULL,
-                seed = NULL,
-                interventions = NULL,
-                userVars = NULL,
-                rules = NULL)
-
-
-SpatialOncoSimul(fp, model = "Exp", 
+SpatialOncoSimul(fp, model = "McFL", 
                  numPassengers = 0, mu = 1e-6, muEF = NULL,
                  detectionSize = 1e8, detectionDrivers = 4,
                  detectionProb = NA,
@@ -82,96 +55,11 @@ SpatialOncoSimul(fp, model = "Exp",
                  maxMigrationPercentage = 0.2,
                  SpatialModel = "3D", 
                  spatialIterMax = 20,
-                 mc.cores = detectCores() - 1)
-
-
-oncoSimulPop(Nindiv, fp, model = "Exp", numPassengers = 0, mu = 1e-6,
-                muEF = NULL,
-                detectionSize = 1e8, detectionDrivers = 4,
-                detectionProb = NA,
-                sampleEvery = ifelse(model \%in\% c("Bozic", "Exp"), 1,
-                             0.025),
-                initSize = 500, s = 0.1, sh = -1,
-                K = sum(initSize)/(exp(1) - 1), keepEvery = sampleEvery,
-                minDetectDrvCloneSz = "auto",
-                extraTime = 0,
-                finalTime = 0.25 * 25 * 365, onlyCancer = FALSE,
-                keepPhylog = FALSE,
-                mutationPropGrowth = ifelse(model == "Bozic",
-                                                       FALSE, TRUE),
-                max.memory = 2000, max.wall.time = 200,
-                max.num.tries = 500,
-                errorHitWallTime = TRUE,
-                errorHitMaxTries = TRUE,
-                initMutant = NULL,
-                AND_DrvProbExit = FALSE,
-                fixation = NULL,
-                verbosity = 0,
-                mc.cores = detectCores(),
-                seed = "auto",
-                interventions = NULL,
-                userVars = NULL,
-                rules = NULL)
-
-
-oncoSimulSample(Nindiv,
-                fp,
-                model = "Exp",
-                numPassengers = 0,
-                mu = 1e-6,
-                muEF = NULL,
-                detectionSize = round(runif(Nindiv, 1e5, 1e8)),
-
-                detectionDrivers = {
-                                if(inherits(fp, "fitnessEffects")) {
-                                    if(length(fp$drv)) {
-                                        nd <- (2: round(0.75 * length(fp$drv)))
-                                    } else {
-                                        nd <- 9e6
-                                    }
-                                } else {
-                                    nd <- (2 : round(0.75 * max(fp)))
-                                }
-                                if (length(nd) == 1)
-                                    nd <- c(nd, nd)
-                                sample(nd, Nindiv,
-                                       replace = TRUE)
-                            },
-                detectionProb = NA,
-                sampleEvery = ifelse(model \%in\% c("Bozic", "Exp"), 1,
-                    0.025),
-                initSize = 500,
-                s = 0.1,
-                sh = -1,
-                K = sum(initSize)/(exp(1) - 1),
-                minDetectDrvCloneSz = "auto",
-                extraTime = 0,
-                finalTime = 0.25 * 25 * 365,
-                onlyCancer = FALSE, keepPhylog = FALSE,
-                mutationPropGrowth = ifelse(model == "Bozic",
-                                                       FALSE, TRUE),
-                max.memory = 2000,
-                max.wall.time.total = 600,
-                max.num.tries.total = 500 * Nindiv,
-                typeSample = "whole",
-                thresholdWhole = 0.5,
-                initMutant = NULL,
-                AND_DrvProbExit = FALSE,
-                fixation = NULL,
-                verbosity  = 1,
-                showProgress = FALSE,
-                seed = "auto",
-                interventions = NULL,
-                userVars = NULL,
-                rules = NULL)
-
-
+                 mc.cores = detectCores() - 1,
+                 SpatialPlot = TRUE)
 }
 
 \arguments{
-
-  \item{Nindiv}{Number of individuals or number of different
-    trajectories to simulate.}
 
   \item{fp}{
 
@@ -189,7 +77,7 @@ oncoSimulSample(Nindiv,
 
 \item{model}{ One of "Bozic", "Exp", "Arb", "McFarlandLog", "McFarlandLogD"
   (the last two can be abbreviated to "McFL" and "McFLD",
-  respectively). The default is "Exp". (See vignette for the difference
+  respectively). The default is "McFL". (See OncoSimulR vignette for the difference
   between "McFL" and "McFLD": in the former, death rate = \eqn{\log(1 +
   N/K)} where \eqn{K} is the initial equilibrium population size; when
   using "McFLD", death rate = \eqn{\max(1, \log(1 + N/K))}, so that death
@@ -253,7 +141,7 @@ oncoSimulSample(Nindiv,
 }
 
 \item{detectionSize}{ What is the minimal number of cells for cancer
-to be detected.  For \code{oncoSimulSample} this can be a vector.
+to be detected. 
 
 If set to NA, \code{detectionSize} plays no role in stopping the
 simulations.
@@ -262,19 +150,7 @@ simulations.
 
 \item{detectionDrivers}{ The minimal number of drivers (not modules,
 drivers, whether or not they are from the same module) present in any
-clone for cancer to be detected. For \code{oncoSimulSample} this can be
-a vector.
-
-For \code{oncoSimulSample}, if there are drivers (either because you are
-using a v.1 object or because you are using a fitnessEffects object with
-a \code{drvNames} component ---see \code{\link{allFitnessEffects}}---)
-the default is a vector of drivers from a uniform between 2 and 0.75 the
-total number of drivers. If there are no drivers (because you are using
-a fitnessEffects object without a \code{drvNames}, either because you
-specified it explicitly or because all of the genes are in the
-noIntGenes component) the simulations should not stop based on the
-number of drivers (and, thus, the default is set to 9e6). This is the case
-when you run the simulation with frequency dependent fitness.
+clone for cancer to be detected.
 
 If set to NA, \code{detectionDrivers} plays no role in stopping the
 simulations.
@@ -357,8 +233,8 @@ This option can not be used with v.1 objects.
   clone/species/genotype, given in the same order as in the
   \code{initMutant} vector. \code{initMutant} thus allows to start the
   simulation from arbitrary population compositions. Combined with
-  \code{mu} it allows for multispecies simulations (see the vignette for
-  examples).
+  \code{mu} it allows for multispecies simulations (see the OncoSimulR vignette 
+  for examples).
 
 }
 
@@ -519,27 +395,10 @@ of \code{sampleEvery} that is larger than or equal to \code{keepEvery}.
   parameter settings where reaching cancer is extremely unlikely and you
   might not want to run forever in those cases.  }
 
-
-\item{max.num.tries.total}{Only applies when \code{onlyCancer = TRUE}
-  and for \code{oncoSimulSample}. What is the maximum number of times,
-  over all simulations for all individuals in a population sample, that
-  we can repeat the simulations so that cancer is reached for all
-  individuals?  The idea is to set a limit on the average minimal
-  probability of reaching cancer for a set of simulations to be
-  accepted.}
-
 \item{max.wall.time}{ Maximum wall time for the simulation of one
   individual (over all \code{max.num.tries}). If the simulation is
   not done in this time, it is aborted.  %% (If \code{max.num.tries = k},
   %% time is kept track of over the k attempts;)
-}
-
-\item{max.wall.time.total}{
-  Maximum wall time for all the simulations (when using
-  \code{oncoSimulSample}), in seconds. If the simulation is not
-  completed in this time, it is aborted. To prevent problems from a
-  single individual simulation going wild, this limit is also enforced
-  per simulation (so the run can be aborted directly from C++).
 }
 
 \item{errorHitMaxTries}{ If TRUE (the default) a simulation that reaches
@@ -562,7 +421,6 @@ of \code{sampleEvery} that is larger than or equal to \code{keepEvery}.
 }
 
 
-
 \item{max.memory}{
   The largest size (in MB) of the matrix of Populations by Time. If it
   creating it would use more than this amount of memory, it is not
@@ -579,26 +437,9 @@ of \code{sampleEvery} that is larger than or equal to \code{keepEvery}.
 
 }
 
-  \item{typeSample}{
-    "singleCell" (or "single") for single cell sampling, where the
-    probability of sampling a cell (a clone) is directly proportional to
-    its population size.  "wholeTumor" (or "whole") for whole tumor
-    sampling (i.e., this is similar to a biopsy being the entire
-    tumor). See \code{\link{samplePop}}.
-  }
-
-  \item{thresholdWhole}{
-    In whole tumor sampling, whether a gene is detected as mutated depends
-    on thresholdWhole: a gene is considered mutated if it is altered in at
-    least thresholdWhole proportion of the cells in that individual. See \code{\link{samplePop}}.
-  }
-  
 
 \item{mc.cores}{Number of cores to use when simulating more than one
   individual (i.e., when calling oncoSimulPop).}
-
-\item{showProgress}{If TRUE, provide information, during exection,
-of the individual done, and the number of attempts and time used.}
 
 \item{AND_DrvProbExit}{If TRUE, cancer will be considered to be reached
   if both the \code{detectionProb} mechanism and \code{detectionDrivers}
@@ -783,168 +624,31 @@ The default is 3-D.
 Maximum number of iterations that can be reached in a simulation. The default is 20.
 }
 
+\item{SpatialPlot}{
+
+Select if it is desired to generate a plot with the result of the spatial 
+simulation or not. The default is TRUE.
+}
+
 }
 
 \details{
 
-  The basic simulation algorithm implemented is the BNB one of Mather et
-  al., 2012, where I have added modifications to fitness based on the
-  restrictions in the order of mutations.
-
-  Full details about the algorithm are provided in Mather et al.,
-  2012. The evolutionary models, including references, and the rest of
-  the parameters are explained in Diaz-Uriarte, 2014, especially in the
-  Supplementary Material. The model called "Bozic" is based on Bozic et
-  al., 2010, and the model called "McFarland" in McFarland et al., 2013.
-
-
-  oncoSimulPop simply calls oncoSimulIndiv multiple times. When run on
-  POSIX systems, it can use multiple cores (via mclapply).
-
-
-  The \code{summary} methods for these classes return some of the return
-  values (see next) as a one-row (for class oncosimul) or multiple row
-  (for class oncosimulpop) data frame.  The \code{print} methods for
-  these classes simply print the summary.
-
-
-  Changing options \code{errorHitMaxTries} and \code{errorHitWallTime}
-  can be useful when conducting many simulations, as in the call to
-  \code{oncoSimulPop}: setting them to TRUE means nothing is recorded
-  for those simulations where ending conditions are not reached but
-  setting them to FALSE would allow you to record the output; this would
-  potentially result in a mixture where some simulations would not have
-  reached the ending condition, but this might sometimes be what you
-  want. Note, however, that \code{oncoSimulSample} always has both them
-  to TRUE, as it could not be otherwise.
-
-
-
-  \code{GenotypesWDistinctOrderEff} provides the information about
-  order effects that is missing from \code{Genotypes}. When there are
-  order effects, the \code{Genotypes} matrix can contain genotypes
-  that are not distinguishable. Suppose there are two genes, the first
-  and the second. In the \code{Genotype} output you can get two
-  columns where there is a 1 in both genes: those two columns
-  correspond to the two possible orders (first gene mutated first, or
-  first gene mutated after the
-  second). \code{GenotypesWDistinctOrderEff} disambiguates this. The
-  same is done by \code{GenotypesLabels}; this is easier to decode for
-  a human (a string of gene labels) but a little bit harder to parse
-  automatically.  Note that when you use the default print method for
-  this object, you get, among others, a two-column display with the
-  \code{GenotypeLabels} information. When order matters, a genotype
-  shown as ``x > y _ z'' means that a mutation in ``x'' happened
-  before a mutation in ``y''; there is also a mutation in ``z'' (which
-  could have happened before or after either of ``x'' or ``y''), but
-  ``z'' is a gene for which order does not matter. When order does not
-  matter, a comma "," separates the identifiers of mutated genes.
-
-
-  Detection of cancer can be a deterministic process, where cancer is
-  always detected (and, thus, simulation ended) when certain conditions
-  are met (\code{detectionSize}, \code{detectionDrivers},
-  \code{fixation}). Alternatively, it can be stochastic process where
-  probability of detection depends on size. Every so often (see below)
-  we assess population size, and detect cancer or not probabilistically
-  (comparing the probability of detection for that size with a random
-  uniform number). Probability of detection changes with population size
-  according to the function
+  The algorithm of SpatialOncoSimul is based on the main concepts of different spatial
+  models (Bartlomiej Waclaw, et al., 2015, A. Sottoriva, et al., 2015, R. Sun, et al., 
+  2017, R. Sun, et al., 2021, Noble, R. et al., 2022) and the ideas set out in the 
+  Master's degree final project of Alberto Parramón Castillo (2018).
   
-  \deqn{ 1 - e^{-cPDetect ( (populationsize - PDBaseline)/PDBaseline )}}.
-
-  You can pass \code{cPDetect} manually (you will need to set \code{n2}
-  and \code{p2} to NA). However, it might be more intuitive to specify
-  the pair \code{n2}, \code{p2}, such that the probability of detection
-  is \eqn{p2} for population size \eqn{n2} (and from that pair we solve
-  for the value of \code{cPDetect}). How often do we check? That is
-  controlled by \code{checkSizePEvery}, the (minimal) time between
-  successive checks (from among the sampling times given by
-  \code{sampleEvery}: the interval between successive assessments will
-  be the smallest multiple integer of \code{sampleEvery} that is
-  larger than \code{checkSizePEvery} ---see vignette for details).
-  \code{checkSizePEvery} has, by default, a different (and much larger)
-  value than \code{sampleEvery} both to allow to examine the effects of
-  sampling, and to avoid many costly random number generations.
-
-  Please note that \code{detectionProb} is NOT available with version 1
-  objects.
-
-  %% : we assess probability of exiting at every sampling time that (the
-  %% closest possible to) a multiple of \code{checkSizePEvery}.
+  The \code{summary} method for the class returns lenght, class and mode of each 
+  of the components as a multiple row data frame. The \code{print} method for the 
+  class simply prints the summary.
 
 
-  
 }
  
 \value{
   
-  For \code{oncoSimulIndiv} a list, of class "oncosimul", with the
-  following components:
-  
-    \item{pops.by.time }{A matrix of the population sizes of the clones,
-    with clones in columns and time in row. Not all clones are shown here,
-    only those that were present in at least on of the keepEvery samples.}
-  
-  \item{NumClones   }{Total number of clones in the above matrix. This
-  is not the total number of distinct clones that have appeared over all
-  simulations (which is likely to be larger or much larger).}
-
-  \item{TotalPopSize}{Total population size at the end.}
-
-  \item{Genotypes}{A matrix of genotypes. For each of the clones in the
-    pops.by.time matrix, its genotype, with a 0 if the gene is not
-    mutated and a 1 if it is mutated.}
-
-  
-  \item{MaxNumDrivers}{The largest number of mutated driver genes ever
-    seen in the simulation in any clone.}
-
-  \item{MaxDriversLast}{The largest number of mutated drivers in any
-    clone     at the   end of the simulation.}
-
-  \item{NumDriversLargestPop}{The number of mutated driver genes in the
-    clone with largest population size. }
-
-  \item{LargestClone}{Population size of the clone with largest number
-    of population size.}
-
-  \item{PropLargestPopLast}{Ratio of LargestClone/TotalPopSize}
-
-  \item{FinalTime}{The time (in time units) at the end of the
-    simulation.}
-
-  \item{NumIter}{The number of iterations of the BNB algorithm.}
-
-  \item{HittedWallTime}{TRUE if we reached the limit of max.wall.time. FALSE
-    otherwise.}
-
-  \item{TotalPresentDrivers}{The total number of mutated driver genes,
-    whether or not in the same clone. The number of elements in
-    \code{OccurringDrivers}, below.}
-
-  \item{CountByDriver}{A vector of length number of drivers, with the
-    count of the number of clones that have that driver mutated.}
-
-  \item{OccurringDrivers}{The actual number of drivers mutated.}
-
-  \item{PerSampleStats}{A 5 column matrix with a row for each sampling
-    period. The columns are: total population size, population size of the
-    largest clone, the ratio of the two, the largest number of drivers in
-    any clone, and the number of drivers in the clone with the largest
-    population size.}
-  
-  \item{other}{A list that contains statistics for an estimate of the
-    simulation error when using the McFarland model as well as other
-    statistics. For the McFarland model, the relevant value is errorMF,
-    which is -99 unless in the McFarland model. For the McFarland model it
-    is the largest difference of successive death rates. The entries named
-    minDMratio and minBMratio are the smallest ratio, over all
-    simulations, of death rate to mutation rate and birth rate to mutation
-    rate, respectively. The BNB algorithm thrives when those are large.}
-  
-
-  For \code{SpatialOncoSimul} a list, of class "SpatialOncoSimul", with the
+  For \code{SpatialOncoSimul} a list, of class "SpatialOncoSimul", with the 
   following components:
   
     \item{Final_Population }{Total number of cells at the end of the simulation.}
@@ -953,58 +657,36 @@ Maximum number of iterations that can be reached in a simulation. The default is
   
   \item{Total_Iterations   }{Final number of executed iterations.}
   
-  \item{List_of_Genotypes   }{Dataframe containing all genotypes and the number of cells with each of them.}
+  \item{List_of_Genotypes   }{Dataframe containing all genotypes and the number 
+  of cells with each of them.}
   
-  \item{Grids   }{List of dataframes, each of them being one grid, with its genotypes, number of cells with each genotype and coordinates.}
-
-  
-  For \code{oncoSimulPop} a list of length \code{Nindiv}, and of class
-  \code{"oncosimulpop"}, where each element of the list is itself a
-  list, of class \code{oncosimul}, with components as described above.
-
-
-  In v.2, the output is of both class "oncosimul" and "oncosimul2". The
-  oncoSimulIndiv return object differs in
-
-  \item{GenotypesWDistinctOrderEff}{
-    A list
-  of vectors, where each vector corresponds to a genotype in the
-  \code{Genotypes}, showing (where it matters) the order of mutations.
-    Each vector shows the genotypes, with the numeric
-  codes, showing explicitly the order when it matters. So if you have
-  genes 1, 2, 7 for which order relationships are given, and genes 3, 4,
-  5, 6 for which other interactions exist, any mutations in 1, 2, 7 are
-  shown first, and in the order they occurred, before showing the rest
-  of the mutations.  See details.}
-  
- 
-
-
-  \item{GenotypesLabels}{The genotypes, as character vectors with the
-  original labels provided (i.e., not the integer codes). As before,
-  mutated genes, for those where order matters, come first, and are
-  separated by the rest by a "_". See details.}
-
-  \item{OccurringDrivers}{This is the same as in v.1, but we use the
-  labels, not the numeric id codes. Of course, if you entered integers
-  as labels for the genes, you will see numbers (however, as a character
-  string).}
-
-%% Fixme: mention probCancer is not a binomial, but a negative binomial.
-
+  \item{Grids   }{List of dataframes, each of them being one grid, with its 
+  genotypes, number of cells with each genotype and coordinates.}
 
 }
 \references{
 
+  Diaz-Uriarte, R. (2015). Identifying restrictions in the order of
+  accumulation of mutations during tumor progression: effects of
+  passengers, evolutionary models, and sampling
+  \url{http://www.biomedcentral.com/1471-2105/16/41/abstract}
+  
   Bozic, I., et al., (2010). Accumulation of driver and passenger
   mutations during tumor progression. \emph{ Proceedings of the National
   Academy of Sciences of the United States of America\/}, \bold{107},
   18545--18550.
   
-  Diaz-Uriarte, R. (2015). Identifying restrictions in the order of
-  accumulation of mutations during tumor progression: effects of
-  passengers, evolutionary models, and sampling
-  \url{http://www.biomedcentral.com/1471-2105/16/41/abstract}
+  R Diaz-Uriarte. (2017). OncoSimulR: genetic simulation with arbitrary epistasis 
+  and mutator genes in asexual populations. Bioinformatics, 33, 1898--1899.
+  https://doi.org/10.1093/bioinformatics/btx077.
+
+  R Diaz-Uriarte and C. Vasallo. (2019). Every which way? On predicting tumor 
+  evolution using cancer progression models 2019 PLoS Computational Biology
+  https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007246
+
+  R Diaz-Uriarte. (2017). Cancer progression models and fitness landscapes: a 
+  many-to-many relationship 2017 Bioinformatics.
+  https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btx663/
 
   Gerstung et al., 2011. The Temporal Order of Genetic and Pathway
   Alterations in Tumorigenesis. \emph{PLoS ONE}, 6.
@@ -1022,166 +704,23 @@ Maximum number of iterations that can be reached in a simulation. The default is
 
 }
 
-
 \note{Please, note that the meaning of the fitness effects in the
   McFarland model is not the same as in the original paper; the fitness
   coefficients are transformed to allow for a simpler fitness function
   as a product of terms. This differs with respect to v.1. See the
-  vignette for details.}
+  OncoSimulR vignette for details.}
 
-\author{Ramon Diaz-Uriarte}
+\author{Antonio Giráldez Trujillo, Maria González Bermejo, Mercedes Núñez Bayón.}
 
 
-\seealso{
-  \code{\link{plot.oncosimul}}, 
-  \code{\link{samplePop}}, \code{\link{allFitnessEffects}}
-  
-
-}
 \examples{
 
+######### A simple example with spatial simulation.
 
+## Fitness Effects of the population genotypes with restrictionsin the order 
+## of accumulation of mutations using a DAG.
 
-#### A model similar to the one in McFarland. We use 270 genes.
-
-set.seed(456)
-nd <- 70
-np <- 200
-s <- 0.1
-sp <- 1e-3
-spp <- -sp/(1 + sp)
-mcf1 <- allFitnessEffects(noIntGenes = c(rep(s, nd), rep(spp, np)),
-                          drv = seq.int(nd))
-mcf1s <-  oncoSimulIndiv(mcf1,
-                         model = "McFL",
-                         mu = 1e-7,
-                         detectionSize = 1e8,
-                         detectionDrivers = 100,
-                         sampleEvery = 0.02,
-                         keepEvery = 2,
-                         initSize = 2000,
-                         finalTime = 1000,
-                         onlyCancer = FALSE)
-plot(mcf1s, addtot = TRUE, lwdClone = 0.6, log = "")
-summary(mcf1s)
-plot(mcf1s)
-
-
-#### Order effects with modules, and 5 genes without interactions
-#### with fitness effects from an exponential distribution
-
-oi <- allFitnessEffects(orderEffects =
-               c("F > D" = -0.3, "D > F" = 0.4),
-               noIntGenes = rexp(5, 10),
-                          geneToModule =
-                              c("Root" = "Root",
-                                "F" = "f1, f2, f3",
-                                "D" = "d1, d2") )
-oiI1 <- oncoSimulIndiv(oi, model = "Exp")
-oiI1$GenotypesLabels
-oiI1   ## note the order and separation by "_"
-
-
-oiP1 <- oncoSimulPop(2, oi,
-                     keepEvery = 10,
-                     mc.cores = 2)
-summary(oiP1)
-
-
-## Even if order exists, this cannot reflect it;
-## G1 to G10 are d1, d2, f1..,f3, and the 5 genes without
-## interaction
-samplePop(oiP1)
-
-
-oiS1 <- oncoSimulSample(2, oi)
-
-## The output contains only the summary of the runs AND
-## the sample:
-oiS1
-
-## And their sizes do differ
-object.size(oiS1)
-object.size(oiP1)
-
-
-
-######## Using an extended poset for pancreatic cancer from Gerstung et al.
-###      (s and sh are made up for the example; only the structure
-###       and names come from Gerstung et al.)
-
-
-pancr <- allFitnessEffects(data.frame(parent = c("Root", rep("KRAS", 4), "SMAD4", "CDNK2A",
-                                          "TP53", "TP53", "MLL3"),
-                                      child = c("KRAS","SMAD4", "CDNK2A",
-                                          "TP53", "MLL3",
-                                          rep("PXDN", 3), rep("TGFBR2", 2)),
-                                      s = 0.05,
-                                      sh = -0.3,
-                                      typeDep = "MN"))
-plot(pancr)
-
-### Use an exponential growth model
-(pancr1 <- oncoSimulIndiv(pancr, model = "Exp"))
-
-summary(pancr1)
-plot(pancr1)
-
-## Pop and Sample
-pancrPop <- oncoSimulPop(2,
-                         pancr,
-                         keepEvery = 10,
-                         mc.cores = 2)
-summary(pancrPop)
-(pancrSPop <- samplePop(pancrPop))
-
-
-(pancrSamp <- oncoSimulSample(2, pancr))
-
-\dontrun{
-## Using gene-specific mutation rates
-muv <- c("U" = 1e-3, "z" = 1e-7, "e" = 1e-6, "m" = 1e-5, "D" = 1e-4)
-ni <- rep(0.01, 5)
-names(ni) <- names(muv)
-femuv <- allFitnessEffects(noIntGenes = ni)
-oncoSimulIndiv(femuv, mu = muv)
-}
-
-######### Frequency dependent birth examples
-
-## An example with cooperation. Presence of WT favours all clones
-## and all clones have a positive effect on themselves
-genofit <- data.frame(A = c(0, 1, 0, 1),
-                      B = c(0, 0, 1, 1),
-                      Birth = c("3 + 5*f_",
-                                  "3 + 5*(f_ + f_A)",
-                                  "3 + 5*(f_ + f_B)",
-                                  "5 + 6*(f_ + f_A_B)"))
-
-afe <- allFitnessEffects(genotFitness = genofit,
-                         frequencyDependentBirth = TRUE)
-
-## Use gene-specific mutation rates and start the simulation from
-## 5000 WT and 1000 A mutants.
-osi <- oncoSimulIndiv(afe,
-                      model = "McFL",
-                      onlyCancer = FALSE,
-                      finalTime = 50,
-                      mu = c("A" = 1e-6, B = 1e-8),
-                      initMutant = c("WT", "A"),
-                      initSize = c(5000, 1000),
-                      keepPhylog = FALSE,
-                      seed = NULL,
-                      errorHitMaxTries = FALSE,
-                      errorHitWallTime = FALSE)
-osi
-
-plot(osi, show = "genotypes", type = "line")
-
-
-## An example with spatial simulation.
-
-fe <- allFitnessEffects(
+s1 <- allFitnessEffects(
   data.frame(parent = c("Root", "Root", "i"),
              child = c("u" , "i" , "v"),
              s = c(0.1 , -0.05 , 0.25),
@@ -1189,9 +728,10 @@ fe <- allFitnessEffects(
              typeDep = "MN"),
   epistasis = c("u:i" = -1,"u:v" = -1))
 
-evalAllGenotypes (fe , order = FALSE, addwt = TRUE)
+evalAllGenotypes (s1 , order = FALSE, addwt = TRUE)
 
-z <- SpatialOncoSimul(fp = fe,
+## Simul the spatial tumor cell growth in 3D during 20 iterations.
+Spatial_3D <- SpatialOncoSimul(fp = s1,
                       model = "McFL",
                       onlyCancer = FALSE,
                       finalTime = 500,
@@ -1201,87 +741,66 @@ z <- SpatialOncoSimul(fp = fe,
                       seed = NULL,
                       errorHitMaxTries = FALSE,
                       errorHitWallTime = FALSE, initMutant = c("i"), 
-                      spatialDemesMax = 20, SpatialModel = "3D")
+                      spatialIterMax = 20, SpatialModel = "3D")
 
+######### Using an extended poset for pancreatic cancer from Gerstung et al.
+###      (s and sh are made up for the example; only the structure
+###       and names come from Gerstung et al.)
 
-\dontrun{
-## This can be slow
-osp <- oncoSimulPop(5,
-                    afe,
-                    model = "McFL",
-                    initSize = 5000,
-                    mu = 1e-6,
-                    keepEvery = 5,
-                    mc.cores = 2,
-                    finalTime = 5000)
+pancr <- allFitnessEffects(
+    data.frame(parent = c("Root", rep("KRAS", 4), 
+                   "SMAD4", "CDNK2A", 
+                   "TP53", "TP53", "MLL3"),
+               child = c("KRAS","SMAD4", "CDNK2A", 
+                   "TP53", "MLL3",
+                   rep("PXDN", 3), rep("TGFBR2", 2)),
+               s = 0.1,
+               sh = -0.9,
+               typeDep = "MN"),
+    drvNames = c("KRAS", "SMAD4", "CDNK2A", "TP53", 
+                 "MLL3", "TGFBR2", "PXDN"))
+evalAllGenotypes (pancr , order = FALSE, addwt = TRUE)
 
-sp <- samplePop(osp)
-
-sp
-}
-
-## A little bit more complex example situation. WT favours clones A and B. A and
-## B compete with each other. Presence of A and B favours clone A, B.
-\dontrun{
-## This can be slow
-
-genofit <- data.frame(A = c(0, 1, 0, 1),
-                      B = c(0, 0, 1, 1),
-                      Birth = c("3 + 5*f_",
-                                  "3 + 5*(f_ + f_1 - f_2)",
-                                  "3 + 5*(f_ + f_2 - f_1)",
-                                  "5 + 6*(f_1 + f_2 + f_1_2)"))
-
-afe <- allFitnessEffects(genotFitness = genofit,
-                         frequencyDependentBirth = TRUE, 
-                         frequencyType = "rel")
-
-osi <- oncoSimulIndiv(afe,
-                      model = "McFL",
+## Using exponential growth model
+Spatial_3D <- SpatialOncoSimul(fp = pancr,
+                      model = "Exp",
                       onlyCancer = FALSE,
-                      finalTime = 200,
-                      mu = 1e-6,
-                      initSize = 5000,
+                      finalTime = 500,
+                      mu = 1e-4,
+                      initSize = 1000,
                       keepPhylog = FALSE,
                       seed = NULL,
                       errorHitMaxTries = FALSE,
-                      errorHitWallTime = FALSE)
-osi
-
-plot(osi, show = "genotypes", type = "line")
-}
-\dontrun{
-## This can be slow
-osp <- oncoSimulPop(5,
-                    afe,
-                    model = "McFL",
-                    initSize = 5000,
-                    onlyCancer = FALSE,
-                    mu = 1e-6,
-                    keepEvery = 5,
-                    mc.cores = 2)
-
-summary(osp)
-
-sp <- samplePop(osp)
-
-sp
+                      errorHitWallTime = FALSE, 
+                      spatialIterMax = 10, SpatialModel = "3D")
 
 
-oss <- oncoSimulSample(5,
-                       afe,
-                       model = "McFL",
-                       initSize = 5000,
-                       mu = 1e-6,
-                       finalTime = 5000,
-                       verbosity = 0)
+######### Frequency dependent birth example. 
 
-oss
-}
+## An example with cooperation. Presence of WT favours all clones and all clones 
+## have a positive effect on themselves
 
+genofit <- data.frame(i = c(0, 1, 0, 1),
+                      u = c(0, 0, 1, 1),
+                      Birth = c("3 + 5*f_",
+                                  "3 + 5*(f_ + f_i)",
+                                  "3 + 5*(f_ + f_u)",
+                                  "5 + 6*(f_ + f_i_u)"))
 
-## Reinitialize the RNG
-set.seed(NULL)
+afe <- allFitnessEffects(genotFitness = genofit,
+                         frequencyDependentBirth = TRUE)
+                         
+Spatial_3D <- SpatialOncoSimul(fp = afe,
+                      model = "McFL",
+                      onlyCancer = FALSE,
+                      finalTime = 500,
+                      mu = 1e-4,
+                      initSize = 1000,
+                      keepPhylog = FALSE,
+                      seed = NULL,
+                      errorHitMaxTries = FALSE,
+                      errorHitWallTime = FALSE, 
+                      spatialIterMax = 10, SpatialModel = "3D")                         
 
 }
 \keyword{misc}
