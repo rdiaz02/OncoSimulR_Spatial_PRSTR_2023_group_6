@@ -14,7 +14,7 @@
   progression from one starting position in a 1D, 2D or 3D grid specified by the user. 
   After the first population of tumoral cells is developed with OncoSimulIndiv, a 
   small population of tumoral cells will migrate to adjacent or remote spaces based 
-  on the fitness of the tumor genotypes. The migrating cells will occupied new space 
+  on the fitness of the tumor genotypes. The migrating cells will occupy new space 
   coordinates and will be combined with an initial population of wild-type cells
   present in the new location. Then, the OncoSimulIndiv function will be launched 
   again in each space coordinate to simulate tumor progression from the new tumor 
@@ -666,6 +666,9 @@ simulation or not. The default is TRUE.
 }
 \references{
 
+  Parramón Castillo, A. (2018). Simulación de un modelo espacial de evolución 
+  tumoral con R y C++. [TFM]. Universidad Complutense de Madrid.
+  
   Diaz-Uriarte, R. (2015). Identifying restrictions in the order of
   accumulation of mutations during tumor progression: effects of
   passengers, evolutionary models, and sampling
