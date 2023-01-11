@@ -11,16 +11,6 @@ library(parallel)
 library(dplyr)
 library(scatterplot3d)
 
-## Definimos genotipos: 
-fe <- allFitnessEffects(
-  data.frame(parent = c("Root", "Root", "i"),
-             child = c("u" , "i" , "v"),
-             s = c(0.1 , -0.05 , 0.25),
-             sh = -1,
-             typeDep = "MN"),
-  epistasis = c("u:i" = -1,"u:v" = -1))
-
-evalAllGenotypes (fe , order = FALSE, addwt = TRUE)
 
 ## Function for creating the output of SpatialOncoSimul and the SpatialOncoSimul 
 ## object type.
@@ -194,8 +184,7 @@ SpatialOncoSimul <- function(fp, model = "McFL",
           coord_remotemigration <- c()
           for (coord in init_coordinates){
             new_coord <- as.numeric(sample(c(coord - sample(seq(10, 35), 1),
-                                             coord + 
-                                               sample(seq(10, 35), 1)), 1)) 
+                                             coord + sample(seq(10, 35), 1)), 1)) 
             coord_remotemigration <- c(coord_remotemigration, new_coord)
           }
         }
@@ -219,8 +208,7 @@ SpatialOncoSimul <- function(fp, model = "McFL",
                                   prob = c(largeDistMigrationProb, 
                                            1 - largeDistMigrationProb))
         ## IF THERE IS ANY KIND KIND OF MIGRATION:
-        if ((near_probtest == "Migration") || (remote_probtest == "Migration")) 
-        {
+        if ((near_probtest == "Migration") || (remote_probtest == "Migration")){
           finalpopcomp_mut <- grid[which((grid$Genotype != "") 
                                          & (grid$N > 0)),]
           finalpopcomp_mut$N <- finalpopcomp_mut$N/sum(finalpopcomp_mut$N)
@@ -229,17 +217,17 @@ SpatialOncoSimul <- function(fp, model = "McFL",
           if (xor((near_probtest == "Migration"),
                   (remote_probtest == "Migration"))) {
             MigPopulationcomp <- as.data.frame(table(
-              sample(finalpopcomp_mut$Genotype, 
-                     MigPopulation, 
-                     replace = TRUE,
-                     prob = finalpopcomp_mut$N)))
+                                               sample(finalpopcomp_mut$Genotype, 
+                                                      MigPopulation, 
+                                                      replace = TRUE,
+                                                      prob = finalpopcomp_mut$N)))
             colnames(MigPopulationcomp) <-c("Genotype", "N") 
             if (near_probtest == "Migration"){
               MigPopulationcomp$Coordinates <- randomcoordinates(
-                grid = grid, "Near")
+                                               grid = grid, "Near")
             } else if (remote_probtest == "Migration"){
               MigPopulationcomp$Coordinates <- randomcoordinates(
-                grid = grid, "Remote")
+                                               grid = grid, "Remote")
             }
           } else if ((near_probtest == "Migration" & 
                       remote_probtest == "Migration")) {
@@ -247,27 +235,46 @@ SpatialOncoSimul <- function(fp, model = "McFL",
             # the number of cells that migrate to near and remote places are
             # randomly determined (at least one of the migrating cells must 
             # go to each site).
-            NearMigPop_number <- sample (from = 1, to = MigPopulation - 1, 
-                                         1)
+            NearMigPop_number <- sample (seq(from = 1, to = MigPopulation - 1), 1)
             RemoteMigPop_number <- MigPopulation - NearMigPop_number
-            NearMigPopulationcomp <- as.data.frame(table(
-              sample(finalpopcomp_mut$Genotype, 
-                     NearMigPop_number, 
-                     replace = TRUE,
-                     prob = finalpopcomp_mut$N)))
-            RemoteMigPopulationcomp <- as.data.frame(table(
-              sample(finalpopcomp_mut$Genotype, 
-                     RemoteMigPop_number, 
-                     replace = TRUE,
-                     prob = finalpopcomp_mut$N)))
-            colnames(NearMigPopulationcomp) <-c("Genotype", "N")
-            colnames(RemoteMigPopulationcomp) <-c("Genotype", "N")
-            NearMigPopulationcomp$Coordinates <- randomcoordinates(
-              grid = grid, "Near")
-            RemoteMigPopulationcomp$Coordinates <- randomcoordinates(
-              grid = grid, "Remote")
-            MigPopulationcomp <- rbind(NearMigPopulationcomp, 
-                                       RemoteMigPopulationcomp$Coordinates)
+            # When both migration probabilities are satified but there is only
+            # one cell that will migrate.
+            if (xor(((NearMigPop_number == 1) & (RemoteMigPop_number = 0)),
+                   ((NearMigPop_number == 0) & (RemoteMigPop_number = 1)))){
+                MigPopulationcomp <- as.data.frame(table(
+                                      sample(finalpopcomp_mut$Genotype, 
+                                             MigPopulation, 
+                                             replace = TRUE,
+                                             prob = finalpopcomp_mut$N)))
+                    if (NearMigPop_number == 1){
+                        colnames(MigPopulationcomp) <-c("Genotype", "N")
+                        MigPopulationcomp$Coordinates <- randomcoordinates(
+                                                          grid = grid, "Near")
+                    } else if (RemoteMigPop_number == 1) {
+                        colnames(MigPopulationcomp) <-c("Genotype", "N")
+                        MigPopulationcomp$Coordinates <- randomcoordinates(
+                                                          grid = grid, "Remote")
+                    }
+            } else {
+                NearMigPopulationcomp <- as.data.frame(table(
+                                          sample(finalpopcomp_mut$Genotype, 
+                                                 NearMigPop_number, 
+                                                 replace = TRUE,
+                                                 prob = finalpopcomp_mut$N)))
+                RemoteMigPopulationcomp <- as.data.frame(table(
+                                              sample(finalpopcomp_mut$Genotype, 
+                                                     RemoteMigPop_number, 
+                                                     replace = TRUE,
+                                                     prob = finalpopcomp_mut$N)))
+                colnames(NearMigPopulationcomp) <-c("Genotype", "N")
+                NearMigPopulationcomp$Coordinates <- randomcoordinates(
+                                                     grid = grid, "Near")
+                colnames(RemoteMigPopulationcomp) <-c("Genotype", "N")
+                RemoteMigPopulationcomp$Coordinates <- randomcoordinates(
+                                                     grid = grid, "Remote")
+                MigPopulationcomp <- rbind(NearMigPopulationcomp, 
+                                           RemoteMigPopulationcomp)
+            }
           } 
           # For each genotype of migrating cells, the corresponding number of 
           # migrating cells is substrated from the original grid.
@@ -495,19 +502,3 @@ SpatialOncoSimul <- function(fp, model = "McFL",
       Simulationplot(FinalObject, dim = SpatialModel)}
     return (FinalObject)
 }
-
-#png("50_iterations.png", width = 500, height = 480)
-z <- SpatialOncoSimul(fp = fe,
-                      onlyCancer = FALSE,
-                      finalTime = 500,
-                      mu = 1e-4,
-                      initSize = 1000,
-                      keepPhylog = FALSE,
-                      seed = NULL,
-                      errorHitMaxTries = FALSE,
-                      errorHitWallTime = FALSE, initMutant = c("i"), 
-                      spatialIterMax = 10, SpatialModel = "3D")
-#dev.off()
-
-
-barplot()
